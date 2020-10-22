@@ -119,4 +119,5 @@ Fourth - Compile and train, now only left to compile and train the model .
 - All the folders like the models, audio_files, images folders should be present as this script requires all those folders to run.
 - In the command prompt run:
 ### streamlit run emotion_detection.py
+- MAke sure all required libraries and packages are pre-installed.
 
