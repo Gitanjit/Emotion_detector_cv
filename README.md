@@ -114,10 +114,9 @@ Third - Now that we have completed the dataset modification, it's time to implem
 Fourth - Compile and train, now only left to compile and train the model .
 
 
-## Prerequisites For The Project :
-# Instructions to run the emotion detection app
--All the folders like the models, audio_files, images folders should be present as this
--script requires all those folders to run.
--In the command prompt run:
-#streamlit run emotion_detection.py
+ Prerequisites For The Project :
+## Instructions to run the emotion detection app
+- All the folders like the models, audio_files, images folders should be present as this script requires all those folders to run.
+- In the command prompt run:
+### streamlit run emotion_detection.py
 
