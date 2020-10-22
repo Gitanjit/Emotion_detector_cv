@@ -121,23 +121,23 @@ script requires all those folders to run.
 In the command prompt run:
 streamlit run emotion_detection.py
 To understand this thoroughly you should have some basic knowledge of :
-● Python
-● OpenCV
-● Convolution Neural Network (CNN) and the various layers used to make it
-● Numpy
-● Tensorflow
+- Python
+- OpenCV
+- Convolution Neural Network (CNN) and the various layers used to make it
+- Numpy
+- Tensorflow
 Libraries of python used in this project:
-● Numpy
-● Matplotlib
-● Pandas
-● OS
-● Sys
-● Gtts
-● PlaySound
-● Streamlit
-● Threading
-● OpenCV
-● Tensorflow / Keras
+- Numpy
+- Matplotlib
+- Pandas
+- OS
+- Sys
+- Gtts
+- PlaySound
+- Streamlit
+- Threading
+- OpenCV
+- Tensorflow / Keras
 Facial Emotion Recognition (AI Major Project)
 First - Import all libraries and modules that are needed in this project and describe all
 the values and variables which you have in dataset, i.e. -
