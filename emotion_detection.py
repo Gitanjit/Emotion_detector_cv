@@ -1,6 +1,7 @@
 import streamlit as st
 import cv2
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import time
 import numpy as np
 from PIL import Image
@@ -11,6 +12,7 @@ from keras.utils.generic_utils import get_custom_objects
 from keras import backend as K
 from playsound import playsound
 import threading
+import tensorflow as tf
 
 def swish_activation(x):
         return (K.sigmoid(x) * x)
@@ -18,43 +20,73 @@ get_custom_objects().update({'swish_activation': Activation(swish_activation)})
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
 labels = ['Angry', 'Disgusted', 'Fearful', 'Happy', 'Sad', 'Surprised', 'Neutral']
-face_detector = cv2.CascadeClassifier('models/haarcascade_frontalface_default.xml')
+face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
-json_file = open('models/jweights.json', 'r')
+json_file = open('jweights.json', 'r')
 model_json = json_file.read()
 json_file.close()
 model = model_from_json(model_json)
 
-model.load_weights('models/hweights.h5')
+model.load_weights('hweights.h5')
+
+model1 = tf.keras.models.load_model('my_model.h5')
+
+index_to_emotion = {0: 'angry',
+                    1: 'disgusted',
+                    2: 'fearful',
+                    3: 'happy',
+                    4: 'neutral',
+                    5: 'sad',
+                    6: 'surprised'}
+
 
 def play_sound_thread(file_name):
     thread = threading.Thread(target=playsound, args=(file_name,))
     thread.start()
 
-def image_emotion_detection(img):
-    np_img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+def image_emotion_detection(img1):
+    np_img_gray = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
 
     faces = face_detector.detectMultiScale(np_img_gray, 1.3, 10)
 
     for (x, y, w, h) in faces:
-        roi = np_img_gray[y:y + h, x:x + w]
-        roi = np.expand_dims(np.expand_dims(cv2.resize(roi, (48, 48)), -1), 0)
-        roi = roi/255
-        required_input_shape = roi.reshape((1, 1, 48, 48))
-        yhat= model.predict(required_input_shape)
-        cv2.rectangle(img, (x, y-25), (x+118, y), (255, 0, 0), -1)
-        detected_label = labels[int(np.argmax(yhat))]
-        cv2.putText(img, detected_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
-        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 3)
+        # roi = np_img_gray[y:y + h, x:x + w]
+        # roi = np.expand_dims(np.expand_dims(cv2.resize(roi, (48, 48)), -1), 0)
+        # roi = roi/255
+        # required_input_shape = roi.reshape((1, 1, 48, 48))
+        # yhat= model.predict(required_input_shape)
+        # cv2.rectangle(img, (x, y-25), (x+118, y), (255, 0, 0), -1)
+        # detected_label = labels[int(np.argmax(yhat))]
+        # cv2.putText(img, detected_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+        # cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 3)
+        img1 = cv2.rectangle(img1, (x-5, y-10), (x+w+5, y + h+10), (255, 0, 0), 2)
+        roi_gray = np_img_gray[y+25:y-10 + h, x+20:x + w-20]
+        roi_color = img1[y+25:y-10 + h, x+20:x + w-20]
+        img = np.zeros_like(roi_color)
+        img[:, :, 0] = roi_gray
+        img[:, :, 1] = roi_gray
+        img[:, :, 2] = roi_gray
 
-        filepath = os.path.join('audio_files', detected_label + '.mp3')
-        play_sound_thread(filepath)
+        # resizing the image
+        try:
+            image = cv2.resize(img, (48,48), interpolation=cv2.INTER_AREA)
+        except Exception as e:
+            print(str(e))
+        img_fed = np.expand_dims(image, axis=0)
+        scores = model1.predict(img_fed)
+        index = np.argmax(scores)
+        img1 = cv2.putText(img1, index_to_emotion[index], (x,y-15), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), thickness=2)
 
-    if len(faces) == 0:
-        filepath = os.path.join('audio_files', 'nofaces.mp3')
-        play_sound_thread(filepath)
 
-    st.image(img, caption="Processed Image", width=500)
+
+    #     filepath = os.path.join('audio_files', index + '.mp3')
+    #     play_sound_thread(filepath)
+
+    # if len(faces) == 0:
+    #     filepath = os.path.join('audio_files', 'nofaces.mp3')
+    #     play_sound_thread(filepath)
+
+    st.image(img1, caption="Processed Image", width=500)
 
 def webcam_img():
     captured_img = None
@@ -92,22 +124,24 @@ def webcam_img():
         faces = face_detector.detectMultiScale(np_img_gray, 1.3, 10)
 
         for (x, y, w, h) in faces:
-            roi = np_img_gray[y:y + h, x:x + w]
-            roi = np.expand_dims(np.expand_dims(cv2.resize(roi, (48, 48)), -1), 0)
-            roi = roi/255
-            required_input_shape = roi.reshape((1, 1, 48, 48))
-            yhat= model.predict(required_input_shape)
-            cv2.rectangle(img, (x, y-25), (x+118, y), (255, 0, 0), -1)
-            detected_label = labels[int(np.argmax(yhat))]
-            cv2.putText(captured_img, detected_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
-            cv2.rectangle(captured_img, (x, y), (x + w, y + h), (255, 0, 0), 3)
+            captured_img = cv2.rectangle(captured_img, (x-5, y-10), (x+w+5, y + h+10), (255, 0, 0), 2)
+            roi_gray = np_img_gray[y+25:y-10 + h, x+20:x + w-20]
+            roi_color = captured_img[y+25:y-10 + h, x+20:x + w-20]
+            img = np.zeros_like(roi_color)
+            img[:, :, 0] = roi_gray
+            img[:, :, 1] = roi_gray
+            img[:, :, 2] = roi_gray
 
-            filepath = os.path.join('audio_files', detected_label + '.mp3')
-            play_sound_thread(filepath)
+            # resizing the image
+            try:
+                image = cv2.resize(img, (48,48), interpolation=cv2.INTER_AREA)
+            except Exception as e:
+                print(str(e))
+            img_fed = np.expand_dims(image, axis=0)
+            scores = model1.predict(img_fed)
+            index = np.argmax(scores)
+            captured_img = cv2.putText(captured_img, index_to_emotion[index], (x,y-15), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), thickness=2)
 
-        if len(faces) == 0:
-            filepath = os.path.join('audio_files', 'nofaces.mp3')
-            play_sound_thread(filepath)
 
         st.image(captured_img, caption="Processed Image", width=800)
 
@@ -124,15 +158,31 @@ def webcam_video():
             faces = face_detector.detectMultiScale(gray,1.3,5)
 
             for (x,y,w,h) in faces:
-                cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
-                roi_gray = gray[y:y+h,x:x+w]
-                roi_gray = np.expand_dims(np.expand_dims(cv2.resize(roi_gray, (48, 48)), -1), 0)
-                roi_gray = roi_gray/255
-                required_input_shape = roi_gray.reshape((1, 1, 48, 48))
-                yhat= model.predict(required_input_shape)
-                cv2.rectangle(frame, (x, y-25), (x+118, y), (255, 0, 0), -1)
-                detected_label = labels[int(np.argmax(yhat))]
-                cv2.putText(frame, detected_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+                # cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
+                # roi_gray = gray[y:y+h,x:x+w]
+                # roi_gray = np.expand_dims(np.expand_dims(cv2.resize(roi_gray, (48, 48)), -1), 0)
+                # roi_gray = roi_gray/255
+                # required_input_shape = roi_gray.reshape((1, 1, 48, 48))
+                # yhat= model.predict(required_input_shape)
+                # cv2.rectangle(frame, (x, y-25), (x+118, y), (255, 0, 0), -1)
+                # detected_label = labels[int(np.argmax(yhat))]
+                # cv2.putText(frame, detected_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+                cv2.rectangle(frame, (x-5, y-10), (x+w+5, y + h+10), (255, 0, 0), 2)
+                roi_gray = gray[y+25:y-10 + h, x+20:x + w-20]
+                roi_color = frame[y+25:y-10 + h, x+20:x + w-20]
+                img = np.zeros_like(roi_color)
+                img[:, :, 0] = roi_gray
+                img[:, :, 1] = roi_gray
+                img[:, :, 2] = roi_gray
+                # resizing the image
+                try:
+                    image = cv2.resize(img, (48,48), interpolation=cv2.INTER_AREA)
+                except Exception as e:
+                    print(str(e))
+                img_fed = np.expand_dims(image, axis=0)
+                scores = model1.predict(img_fed)
+                index = np.argmax(scores)
+                cv2.putText(frame, index_to_emotion[index], (x,y-15), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), thickness=2)
 
             cv2.rectangle(frame, (0, 0), (155, 20), (0, 0, 0), -1)
             cv2.putText(frame, 'Press ESC to exit', (2, 16), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0,  255), 1)
@@ -150,7 +200,7 @@ st.text("An app that detects Facial Emotions")
 
 sidebar = st.sidebar.selectbox("", ['Documentation', 'Detection'])
 if sidebar == 'Documentation':
-    st.image('Images/first.png', width=800)
+    # st.image('first.png', width=800)
     st.markdown(
     '''
     **Emotion Detection App** helps to detect emotions of the faces. This app uses
@@ -165,7 +215,7 @@ if sidebar == 'Documentation':
     The summary of the model which we have used is :
     '''
     )
-    st.image('Images/model-summary.png')
+    st.image('model-summary.png')
     st.markdown(
     '''
     From the summary we can see that Convolutional Layer, MaxPooling Layer, swish activation function
@@ -174,9 +224,9 @@ if sidebar == 'Documentation':
     Using this model we got a accuracy graph:
     '''
     )
-    st.image('Images/accuracy_graph.png', width=500)
+    st.image('accuracy_graph.png', width=500)
     st.write("And the Loss graph is ")
-    st.image('Images/download.png', width=500)
+    st.image('download.png', width=500)
     if st.button("Frequently Asked Questions on Model"):
         st.markdown(
         '''
@@ -304,6 +354,7 @@ elif sidebar == 'Detection':
         )
         filepath = st.text_input("Video File Path: ")
         if filepath.endswith('.mp4'):
+            print("video detected")
             if st.button("Start Detecting"):
                 os.system('python video_detection.py ' + str(filepath))
     elif selection == selection_tuple[2]:
