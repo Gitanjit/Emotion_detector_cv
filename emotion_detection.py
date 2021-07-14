@@ -20,16 +20,16 @@ get_custom_objects().update({'swish_activation': Activation(swish_activation)})
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
 labels = ['Angry', 'Disgusted', 'Fearful', 'Happy', 'Sad', 'Surprised', 'Neutral']
-face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+face_detector = cv2.CascadeClassifier('models/haarcascade_frontalface_default.xml')
 
-json_file = open('jweights.json', 'r')
+json_file = open('models/jweights.json', 'r')
 model_json = json_file.read()
 json_file.close()
 model = model_from_json(model_json)
 
-model.load_weights('hweights.h5')
+model.load_weights('models/hweights.h5')
 
-model1 = tf.keras.models.load_model('my_model.h5')
+model1 = tf.keras.models.load_model('models/my_model.h5')
 
 index_to_emotion = {0: 'angry',
                     1: 'disgusted',
@@ -200,7 +200,6 @@ st.text("An app that detects Facial Emotions")
 
 sidebar = st.sidebar.selectbox("", ['Documentation', 'Detection'])
 if sidebar == 'Documentation':
-    # st.image('first.png', width=800)
     st.markdown(
     '''
     **Emotion Detection App** helps to detect emotions of the faces. This app uses
@@ -215,7 +214,7 @@ if sidebar == 'Documentation':
     The summary of the model which we have used is :
     '''
     )
-    st.image('model-summary.png')
+    st.image('static/model-summary.png')
     st.markdown(
     '''
     From the summary we can see that Convolutional Layer, MaxPooling Layer, swish activation function
@@ -224,9 +223,9 @@ if sidebar == 'Documentation':
     Using this model we got a accuracy graph:
     '''
     )
-    st.image('accuracy_graph.png', width=500)
+    st.image('static/accuracy_graph.png', width=500)
     st.write("And the Loss graph is ")
-    st.image('download.png', width=500)
+    st.image('static/download.png', width=500)
     if st.button("Frequently Asked Questions on Model"):
         st.markdown(
         '''

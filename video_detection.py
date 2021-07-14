@@ -17,7 +17,7 @@ def swish_activation(x):
 get_custom_objects().update({'swish_activation': Activation(swish_activation)})
 
 labels = ['Angry', 'Disgusted', 'Fearful', 'Happy', 'Sad', 'Surprised', 'Neutral']
-face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+face_detector = cv2.CascadeClassifier('models/haarcascade_frontalface_default.xml')
 
 index_to_emotion = {0: 'angry',
                     1: 'fearful',
@@ -28,13 +28,13 @@ index_to_emotion = {0: 'angry',
                     6: 'surprised'}
 
 
-json_file = open('jweights.json', 'r')
+json_file = open('models/jweights.json', 'r')
 model_json = json_file.read()
 json_file.close()
 model = model_from_json(model_json)
 
-model.load_weights('hweights.h5')
-model1 = tf.keras.models.load_model('my_model.h5')
+model.load_weights('models/hweights.h5')
+model1 = tf.keras.models.load_model('models/my_model.h5')
 
 filepath = sys.argv[1]
 print(filepath)
